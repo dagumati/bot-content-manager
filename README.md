@@ -143,8 +143,65 @@ ADMIN_PASSWORD=admin123
 - Extract `GOOGLE_SHEET_ID` from your Google Sheet URL: `https://docs.google.com/spreadsheets/d/[SHEET_ID]/edit`
 - Copy the `client_email` from your JSON key file to `GOOGLE_SERVICE_ACCOUNT_EMAIL`
 - Copy the `private_key` from your JSON key file to `GOOGLE_PRIVATE_KEY` (keep the quotes and newlines)
-- Generate a strong `JWT_SECRET` for production
-- Create a secure `DELIVERY_API_KEY` for bot integration
+
+### 🔐 Generating Secure Secrets
+
+**CRITICAL**: Never use the default secrets in production! Generate strong, unique secrets for both `JWT_SECRET` and `DELIVERY_API_KEY`.
+
+#### Method 1: Using OpenSSL (Recommended)
+```bash
+# Generate JWT_SECRET (64 character random string)
+openssl rand -base64 64 | tr -d "=+/" | cut -c1-64
+
+# Generate DELIVERY_API_KEY (128 character secure key)
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+#### Method 2: Using Node.js
+```bash
+# Generate both secrets at once
+node -e "console.log('JWT_SECRET=' + require('crypto').randomBytes(48).toString('base64')); console.log('DELIVERY_API_KEY=' + require('crypto').randomBytes(64).toString('hex'));"
+```
+
+#### Security Best Practices
+- ✅ Store secrets securely (environment variables, secret managers)
+- ✅ Never commit secrets to version control (.gitignore protection)
+- ✅ Use different secrets for different environments (dev/staging/prod)
+- ✅ Enable HTTPS in production
+- ✅ Consider implementing secret rotation strategies
+- ✅ Backup secrets securely in case of emergency
+
+#### Example Production Secrets
+```env
+# Example of what generated secrets might look like (DO NOT USE THESE - GENERATE YOUR OWN!)
+JWT_SECRET=X8rtdIhBhZQIZN2zZkuolKSC9uyj8MsdvNFO0D2Y22vRp10ZHCVJO2joKr9AIq3G8m8JJcveyB0oh4ueP0F5g
+DELIVERY_API_KEY=77e3cb7f797bebd8262db062275245033b5692d1993491035c9c05c1cbf9a216dfeb25130e44b4c3ea32d0ffab5466b61f63591839c739babd34afa69e053af0
+```
+
+### 🤖 Bot Integration Usage
+
+It's important to understand which token to use for different purposes:
+
+#### For Content Managers (Web Dashboard)
+- **Token Type**: JWT Token (Bearer authentication)
+- **Generated From**: Login endpoint (`/api/auth/login`)
+- **Usage**: Used in `Authorization: Bearer <jwt-token>` header
+- **Access**: Management API endpoints (CRUD operations)
+
+#### For Bot Applications (External Integration)
+- **Token Type**: API Key (X-API-Key authentication)
+- **Generated From**: Environment variable `DELIVERY_API_KEY`
+- **Usage**: Used in `X-API-Key: <delivery-api-key>` header
+- **Access**: Delivery API endpoints (read-only)
+
+**Quick Reference:**
+```http
+# Content Manager API calls
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Bot Integration API calls
+X-API-Key: 77e3cb7f797bebd8262db062275245033b5692d1993491035c9c05c1cbf9a216dfeb25130e44b4c3ea32d0ffab5466b61f63591839c739babd34afa69e053af0
+```
 
 ### 4. Development Setup
 
@@ -251,13 +308,21 @@ All delivery endpoints require API key authentication via `X-API-Key: <key>` hea
 // Get a specific response
 const response = await fetch('https://your-app.com/api/delivery/responses/greeting_welcome', {
   headers: {
-    'X-API-Key': 'your-delivery-api-key'
+    'X-API-Key': 'your-delivery-api-key'  // Generated DELIVERY_API_KEY from .env
   }
 });
 
 const data = await response.json();
 console.log(data.response_text); // "Hello! How can I help you today?"
 ```
+
+#### Bot Integration Checklist
+- ✅ Generate secure `DELIVERY_API_KEY` using the methods above
+- ✅ Store the API key securely in your bot's configuration
+- ✅ Include the key in the `X-API-Key` header for all requests
+- ✅ Handle HTTP 401 errors for invalid keys
+- ✅ Consider implementing automatic retry logic
+- ✅ Monitor API usage and implement rate limiting on the bot side
 
 ## 🔒 Security Features
 
@@ -374,14 +439,16 @@ npm test
 |----------|-------------|----------|---------|
 | `PORT` | Backend server port | No | 3001 |
 | `NODE_ENV` | Environment mode | No | development |
-| `JWT_SECRET` | JWT signing secret | Yes | - |
+| `JWT_SECRET` | JWT signing secret (MIN 32 chars) | Yes | - |
 | `JWT_EXPIRES_IN` | Token expiration | No | 24h |
 | `GOOGLE_SHEET_ID` | Google Sheet ID | Yes | - |
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | Service account email | Yes | - |
 | `GOOGLE_PRIVATE_KEY` | Service account private key | Yes | - |
-| `DELIVERY_API_KEY` | API key for bot integration | Yes | - |
+| `DELIVERY_API_KEY` | API key for bot integration (MIN 64 chars) | Yes | - |
 | `ADMIN_USERNAME` | Default admin username | No | admin |
 | `ADMIN_PASSWORD` | Default admin password | No | admin123 |
+
+**⚠️ Security Warning**: Both `JWT_SECRET` and `DELIVERY_API_KEY` must be cryptographically strong random strings. Never use the default placeholder values in production!
 
 ### Google Sheet Configuration
 

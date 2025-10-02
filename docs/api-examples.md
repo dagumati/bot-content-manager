@@ -308,3 +308,4 @@ Set up these environment variables in Postman:
 - `baseUrl`: `http://localhost:3001`
 - `token`: (set automatically from login response)
 - `deliveryApiKey`: `your-delivery-api-key`
+

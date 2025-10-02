@@ -49,3 +49,4 @@ networks:
 volumes:
   logs:
     driver: local
+
