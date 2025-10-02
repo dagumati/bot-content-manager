@@ -1,0 +1,22 @@
+{
+  "name": "bot-content-manager",
+  "version": "1.0.0",
+  "description": "A web application for managing chatbot response content via Google Sheets",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\"",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend:dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "keywords": ["bot", "content", "management", "google-sheets", "react", "nodejs"],
+  "author": "Bot Content Manager Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
